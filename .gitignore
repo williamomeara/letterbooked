@@ -244,6 +244,9 @@ Desktop.ini
 media/
 static/
 
+example/
+
+
 # React build
 build/
 

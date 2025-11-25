@@ -16,7 +16,7 @@ function App() {
     <Router>
       <div data-bs-theme="dark" className="min-vh-100 bg-dark text-light">
         <Navbar />
-        <div className="container mt-4">
+        <div className="content-wrapper mt-4">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -28,7 +28,7 @@ function App() {
             <Route path="/diary" element={<Diary />} />
           </Routes>
         </div>
-        <footer className="bg-dark text-light py-4 mt-5">
+        <footer className="bg-dark text-light py-4 mt-5 page-footer">
           <div className="container">
             <div className="row">
               <div className="col-md-6">

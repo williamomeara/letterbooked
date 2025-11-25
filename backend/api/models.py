@@ -48,6 +48,17 @@ class Review(models.Model):
     def __str__(self):
         return f"{self.user.username}'s review of {self.book.title}"
 
+class ReviewLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review_likes')
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'review')
+
+    def __str__(self):
+        return f"{self.user.username} liked {self.review.user.username}'s review"
+
 class List(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lists')
     name = models.CharField(max_length=255)

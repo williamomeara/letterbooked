@@ -5,7 +5,7 @@ from django.core.files.base import ContentFile
 from api.models import Author, Publisher, Book
 
 class Command(BaseCommand):
-    help = 'Populate the database with popular fantasy books from Google Books API'
+    help = 'Populate the database with popular fantasy books from Open Library API'
 
     def handle(self, *args, **options):
         self.stdout.write('Clearing existing book data...')
@@ -14,8 +14,7 @@ class Command(BaseCommand):
         Publisher.objects.all().delete()
         self.stdout.write(self.style.SUCCESS('Existing data cleared.'))
 
-        api_key = os.getenv('GOOGLE_API_KEY')
-        base_url = 'https://www.googleapis.com/books/v1/volumes'
+        base_url = 'https://openlibrary.org/search.json'
         
         # Search queries to get popular fantasy books
         queries = ['fantasy novel', 'fantasy bestseller', 'popular fantasy novel', 'epic fantasy novel']
@@ -28,8 +27,8 @@ class Command(BaseCommand):
                 
             params = {
                 'q': query,
-                'maxResults': 40,  # API max is 40 per request
-                'key': api_key
+                'limit': 50,  # Max per request
+                'offset': 0
             }
             
             try:
@@ -37,51 +36,34 @@ class Command(BaseCommand):
                 response.raise_for_status()
                 data = response.json()
                 
-                items = data.get('items', [])
+                docs = data.get('docs', [])
                 
-                for item in items:
+                for doc in docs:
                     if books_created >= max_books:
                         break
-                        
-                    volume_info = item.get('volumeInfo', {})
                     
                     # Extract book data
-                    title = volume_info.get('title', '')
-                    authors = volume_info.get('authors', [])
-                    publisher_name = volume_info.get('publisher', 'Unknown Publisher')
-                    published_date = volume_info.get('publishedDate', '')
-                    
-                    # Normalize published_date to YYYY-MM-DD format
-                    if published_date:
-                        if len(published_date) == 4:  # Year only
-                            published_date = f"{published_date}-01-01"
-                        elif len(published_date) == 7:  # Year-Month
-                            published_date = f"{published_date}-01"
-                        elif len(published_date) == 10:  # Already YYYY-MM-DD
-                            pass
-                        else:
-                            published_date = None  # Invalid format
+                    title = doc.get('title', '')
+                    authors = doc.get('author_name', [])
+                    publisher_name = doc.get('publisher', ['Unknown Publisher'])[0] if doc.get('publisher') else 'Unknown Publisher'
+                    published_date = doc.get('first_publish_year')
+                    if published_date and isinstance(published_date, int) and 1000 <= published_date <= 2100:
+                        published_date = f"{published_date}-01-01"  # Normalize to YYYY-MM-DD
                     else:
                         published_date = None
-                    description = volume_info.get('description', '')
-                    page_count = volume_info.get('pageCount', 0)
-                    categories = volume_info.get('categories', [])
-                    genre = categories[0] if categories else 'Unknown'
+                    description = doc.get('description', {}).get('value', '') if isinstance(doc.get('description'), dict) else doc.get('description', '')
+                    page_count = doc.get('number_of_pages_median', 0)
+                    genres = doc.get('subject', [])
+                    genre = genres[0] if genres else 'Fantasy'
                     
                     # Get ISBN
-                    isbn = None
-                    for identifier in volume_info.get('industryIdentifiers', []):
-                        if identifier.get('type') == 'ISBN_13':
-                            isbn = identifier.get('identifier')
-                            break
-                        elif identifier.get('type') == 'ISBN_10' and not isbn:
-                            isbn = identifier.get('identifier')
+                    isbn = doc.get('isbn', [None])[0] if doc.get('isbn') else None
                     
-                    # Get rating
-                    average_rating = volume_info.get('averageRating')
-                    ratings_count = volume_info.get('ratingsCount', 0)
+                    # Get rating (Open Library uses user ratings)
+                    average_rating = doc.get('ratings_average')
+                    ratings_count = doc.get('ratings_count', 0)
                     
-                    # Skip if not popular enough (require at least 3.0 rating and 5+ ratings, or no rating but skip if very low)
+                    # Skip if not popular enough
                     if average_rating and (average_rating < 3.0 or ratings_count < 5):
                         continue
                     
@@ -98,7 +80,7 @@ class Command(BaseCommand):
                     # Create book
                     book = Book.objects.create(
                         title=title,
-                        description=description[:500] if description else '',  # Truncate if too long
+                        description=description[:500] if description else '',
                         isbn=isbn,
                         genre=genre,
                         page_count=page_count,
@@ -108,18 +90,12 @@ class Command(BaseCommand):
                     )
                     
                     # Download cover image
-                    image_links = volume_info.get('imageLinks', {})
-                    cover_url = None
-                    # Prefer larger image sizes
-                    for size in ['extraLarge', 'large', 'medium', 'thumbnail']:
-                        if image_links.get(size):
-                            cover_url = image_links[size]
-                            break
-                    if cover_url:
+                    cover_id = doc.get('cover_i')
+                    if cover_id:
+                        cover_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"  # Large cover
                         try:
                             img_response = requests.get(cover_url)
                             img_response.raise_for_status()
-                            # Create a safe filename from title
                             import re
                             safe_title = re.sub(r'[^\w\-_\. ]', '', title)[:50].strip().replace(' ', '_')
                             filename = f"{safe_title}.jpg"
@@ -143,4 +119,4 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f'Error fetching data for query "{query}": {e}'))
                 continue
         
-        self.stdout.write(self.style.SUCCESS(f'Successfully created {books_created} popular fantasy books from Google Books API'))
+        self.stdout.write(self.style.SUCCESS(f'Successfully created {books_created} popular fantasy books from Open Library API'))

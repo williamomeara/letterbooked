@@ -5,11 +5,11 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.db.models import Avg
-from .models import Author, Publisher, Book, Review, List, Follow, Tag, BookTag, ReviewTag, Activity, Profile, DiaryEntry
+from django.utils import timezone
+from .models import Author, Book, Review, Profile, DiaryEntry, ReviewLike
 from .serializers import (
-    AuthorSerializer, PublisherSerializer, BookSerializer, ReviewSerializer,
-    ListSerializer, FollowSerializer, TagSerializer, BookTagSerializer,
-    ReviewTagSerializer, ActivitySerializer, ProfileSerializer, UserSerializer, DiaryEntrySerializer
+    AuthorSerializer, BookSerializer, ReviewSerializer,
+    ProfileSerializer, UserSerializer, DiaryEntrySerializer, ReviewLikeSerializer
 )
 
 # Custom permission classes
@@ -21,9 +21,16 @@ class IsVerifiedAuthor(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.role == 'author' and request.user.profile.is_verified
 
-class IsUserOrHigher(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and hasattr(request.user, 'profile')
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Custom permission to only allow owners of an object to edit it.
+    """
+    def has_object_permission(self, request, view, obj):
+        # Read permissions are allowed to any authenticated user
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
+        # Write permissions are only allowed to the owner of the review
+        return obj.user == request.user
 
 class UserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)
@@ -55,20 +62,22 @@ class AuthorViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated(), IsAdmin()]  # Only admins can modify
         return super().get_permissions()
 
-class PublisherViewSet(viewsets.ModelViewSet):
-    queryset = Publisher.objects.all()
-    serializer_class = PublisherSerializer
-    permission_classes = [IsAuthenticated]  # Allow authenticated users to read
-
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated(), IsAdmin()]  # Only admins can modify
-        return super().get_permissions()
-
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Book.objects.all()
+        ordering = self.request.query_params.get('ordering', None)
+        if ordering:
+            queryset = queryset.order_by(ordering)
+        
+        limit = self.request.query_params.get('limit', None)
+        if limit:
+            queryset = queryset[:int(limit)]
+        
+        return queryset
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
@@ -78,52 +87,37 @@ class BookViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Review.objects.filter(user=self.request.user)
+        queryset = Review.objects.all()
+        user_param = self.request.query_params.get('user', None)
+        if user_param:
+            if user_param == 'me':
+                queryset = queryset.filter(user=self.request.user)
+            else:
+                queryset = queryset.filter(user__username=user_param)
+        
+        ordering = self.request.query_params.get('ordering', None)
+        if ordering:
+            queryset = queryset.order_by(ordering)
+        
+        limit = self.request.query_params.get('limit', None)
+        if limit:
+            queryset = queryset[:int(limit)]
+        
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-class ListViewSet(viewsets.ModelViewSet):
-    queryset = List.objects.all()
-    serializer_class = ListSerializer
+class ReviewLikeViewSet(viewsets.ModelViewSet):
+    queryset = ReviewLike.objects.all()
+    serializer_class = ReviewLikeSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return List.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class FollowViewSet(viewsets.ModelViewSet):
-    queryset = Follow.objects.all()
-    serializer_class = FollowSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Follow.objects.filter(follower=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(follower=self.request.user)
-
-class TagViewSet(viewsets.ModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-
-class BookTagViewSet(viewsets.ModelViewSet):
-    queryset = BookTag.objects.all()
-    serializer_class = BookTagSerializer
-
-class ReviewTagViewSet(viewsets.ModelViewSet):
-    queryset = ReviewTag.objects.all()
-    serializer_class = ReviewTagSerializer
-
-class ActivityViewSet(viewsets.ModelViewSet):
-    queryset = Activity.objects.all()
-    serializer_class = ActivitySerializer
-    permission_classes = [IsAuthenticated]
+        return ReviewLike.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -137,12 +131,66 @@ class DiaryEntryViewSet(viewsets.ModelViewSet):
         return DiaryEntry.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        diary_entry, created = DiaryEntry.objects.get_or_create(
-            user=self.request.user,
-            book_id=serializer.validated_data['book_id'],
-            defaults=serializer.validated_data
-        )
-        if not created:
-            for key, value in serializer.validated_data.items():
-                setattr(diary_entry, key, value)
-            diary_entry.save()
+        instance = serializer.save(user=self.request.user)
+        # Auto-set read_date when creating with status 'read'
+        if instance.status == 'read' and (instance.read_date is None or instance.read_date == ''):
+            instance.read_date = timezone.now().date()
+            instance.save()
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        # Auto-set read_date when status changes to 'read'
+        if instance.status == 'read' and (instance.read_date is None or instance.read_date == ''):
+            instance.read_date = timezone.now().date()
+            instance.save()
+
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_stats(request):
+    user = request.user
+    reviews = Review.objects.filter(user=user)
+    total_reviews = reviews.count()
+    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    books_reviewed = reviews.values('book').distinct().count()
+    likes_received = ReviewLike.objects.filter(review__user=user).count()
+
+    return Response({
+        'total_reviews': total_reviews,
+        'avg_rating': round(avg_rating, 1) if avg_rating else 0,
+        'books_reviewed': books_reviewed,
+        'likes_received': likes_received,
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_activity(request):
+    user = request.user
+    # Get recent activities: likes on user's reviews, user's new reviews, etc.
+    activities = []
+
+    # Recent likes on user's reviews
+    recent_likes = ReviewLike.objects.filter(review__user=user).order_by('-created_at')[:10]
+    for like in recent_likes:
+        activities.append({
+            'id': f'like_{like.id}',
+            'description': f'{like.user.username} liked your review of "{like.review.book.title}"',
+            'created_at': like.created_at,
+        })
+
+    # Recent reviews by user
+    recent_reviews = Review.objects.filter(user=user).order_by('-created_at')[:5]
+    for review in recent_reviews:
+        activities.append({
+            'id': f'review_{review.id}',
+            'description': f'You reviewed "{review.book.title}"',
+            'created_at': review.created_at,
+        })
+
+    # Sort by created_at descending
+    activities.sort(key=lambda x: x['created_at'], reverse=True)
+    activities = activities[:10]  # Limit to 10 most recent
+
+    return Response(activities)

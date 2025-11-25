@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Author, Publisher, Book, Review, List, Follow, Tag, BookTag, ReviewTag, Activity, Profile, DiaryEntry
+from .models import Author, Publisher, Book, Review, List, Follow, Tag, BookTag, ReviewTag, Activity, Profile, DiaryEntry, ReviewLike
 
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,6 +17,7 @@ class BookSerializer(serializers.ModelSerializer):
     publisher = PublisherSerializer(read_only=True)
     avg_rating = serializers.SerializerMethodField()
     cover_url = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
 
     def get_avg_rating(self, obj):
         return obj.average_rating
@@ -26,18 +27,41 @@ class BookSerializer(serializers.ModelSerializer):
             return obj.cover.url
         return None
 
+    def get_reviews_count(self, obj):
+        return obj.reviews.count()
+
     class Meta:
         model = Book
-        fields = ['id', 'title', 'description', 'isbn', 'genre', 'page_count', 'publication_date', 'publisher', 'authors', 'average_rating', 'avg_rating', 'cover_url']
+        fields = ['id', 'title', 'description', 'isbn', 'genre', 'page_count', 'publication_date', 'publisher', 'authors', 'average_rating', 'avg_rating', 'cover_url', 'reviews_count']
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     book = BookSerializer(read_only=True)
     book_id = serializers.IntegerField(write_only=True)
+    likes_count = serializers.SerializerMethodField()
+    is_liked_by_user = serializers.SerializerMethodField()
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+    def get_is_liked_by_user(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
 
     class Meta:
         model = Review
-        fields = ('id', 'user', 'book', 'book_id', 'rating', 'text', 'created_at')
+        fields = ('id', 'user', 'book', 'book_id', 'rating', 'text', 'created_at', 'likes_count', 'is_liked_by_user')
+
+class ReviewLikeSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    review = ReviewSerializer(read_only=True)
+    review_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = ReviewLike
+        fields = ('id', 'user', 'review', 'review_id', 'created_at')
 
 class ListSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
@@ -96,6 +120,22 @@ class DiaryEntrySerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     book = BookSerializer(read_only=True)
     book_id = serializers.IntegerField(write_only=True)
+
+    def validate_read_date(self, value):
+        if value == '' or value is None or value == 'null':
+            return None
+        # Convert string date to date object if needed
+        if isinstance(value, str):
+            from datetime import datetime
+            try:
+                parsed_date = datetime.strptime(value, '%Y-%m-%d').date()
+                return parsed_date
+            except ValueError as e:
+                raise serializers.ValidationError("Invalid date format")
+        return value
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
     class Meta:
         model = DiaryEntry

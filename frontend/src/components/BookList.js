@@ -171,16 +171,8 @@ const BookList = () => {
       </div>
 
       {/* Books Section */}
-      <div className="container-fluid books-section">
-        <div className="results-info">
-          <p className="text-muted">
-            Showing {paginatedBooks.length > 0 ? startIndex + 1 : 0} 
-            – {Math.min((currentPage) * itemsPerPage, filteredBooks.length)} 
-            of {filteredBooks.length} books
-          </p>
-        </div>
-
-        <div className="books-grid">
+      <section className="section col-24 col-main">
+        <div id="films-browser-list-container" className="books-grid">
           {paginatedBooks.map(book => (
             <div
               key={book.id}
@@ -264,7 +256,7 @@ const BookList = () => {
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Enhanced Pagination */}
       <div className="pagination-section">

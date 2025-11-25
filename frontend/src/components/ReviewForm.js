@@ -68,6 +68,7 @@ const ReviewForm = ({ bookId, existingReview, loading, onReviewAdded }) => {
       };
       if (existingReview) {
         await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/${existingReview.id}/`, { rating, text }, config);
+        setIsEditing(false); // Return to read-only mode after successful edit
       } else {
         await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`, { book_id: bookId, rating, text }, config);
       }
@@ -80,10 +81,8 @@ const ReviewForm = ({ bookId, existingReview, loading, onReviewAdded }) => {
   if (existingReview && !isEditing) {
     return (
       <div className="mb-3">
-        <h5>Your Review</h5>
-        <p>Rating: {renderRatingStars(rating)} ({rating})</p>
-        <p>{text || 'No text'}</p>
-        <button className="btn btn-secondary" onClick={() => setIsEditing(true)}>Edit Review</button>
+        <p><em>Your review appears in the reviews list above.</em></p>
+        <button className="btn btn-secondary" onClick={() => setIsEditing(true)}>Edit Your Review</button>
       </div>
     );
   }
