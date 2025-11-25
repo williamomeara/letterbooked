@@ -1,0 +1,12 @@
+# Force JavaScript detection for React files
+*.js linguist-language=JavaScript
+*.jsx linguist-language=JavaScript
+*.ts linguist-language=TypeScript
+*.tsx linguist-language=TypeScript
+
+# Ensure Python files are detected
+*.py linguist-language=Python
+
+# Exclude build artifacts from language stats
+frontend/build/** linguist-generated=true
+backend/__pycache__/** linguist-generated=true
