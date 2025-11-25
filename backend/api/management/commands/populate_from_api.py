@@ -1,3 +1,4 @@
+import os
 import requests
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
@@ -13,7 +14,7 @@ class Command(BaseCommand):
         Publisher.objects.all().delete()
         self.stdout.write(self.style.SUCCESS('Existing data cleared.'))
 
-        api_key = 'AIzaSyCi7PzlQS6Tj6nr8sGRkJYSy5ninq3rf8U'  # Replace with your actual API key
+        api_key = os.getenv('GOOGLE_API_KEY')
         base_url = 'https://www.googleapis.com/books/v1/volumes'
         
         # Search queries to get diverse books
