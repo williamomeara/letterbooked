@@ -57,7 +57,7 @@ const BookList = () => {
   const handleQuickRating = async (bookId, rating) => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const existingReview = userReviews.find(review => review.book_id === parseInt(bookId));
+      const existingReview = (userReviews || []).find(review => review.book_id === parseInt(bookId));
       if (existingReview) {
         await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/${existingReview.id}/`, { rating, text: '' }, config);
       } else {
@@ -75,7 +75,7 @@ const BookList = () => {
   const handleAddToReadList = async (bookId) => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const existingEntry = diaryEntries.find(entry => entry.book.id === parseInt(bookId));
+      const existingEntry = (diaryEntries || []).find(entry => entry.book.id === parseInt(bookId));
       
       if (existingEntry) {
         // Update existing entry to 'to-read' if it's not already
@@ -125,27 +125,30 @@ const BookList = () => {
     const fetchBooks = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/`);
-        setBooks(response.data);
+        setBooks(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching books', error);
+        setBooks([]);
       }
     };
     const fetchUserReviews = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=me`, config);
-        setUserReviews(response.data);
+        setUserReviews(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching reviews', error);
+        setUserReviews([]);
       }
     };
     const fetchDiaryEntries = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, config);
-        setDiaryEntries(response.data);
+        setDiaryEntries(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching diary entries', error);
+        setDiaryEntries([]);
       }
     };
     if (user) {
@@ -155,7 +158,7 @@ const BookList = () => {
     }
   }, [user, token]);
 
-  const filteredBooks = books.filter(book => {
+  const filteredBooks = (books || []).filter(book => {
     if (!book.cover_url) return false;
     const searchLower = search.toLowerCase();
     const searchWords = searchLower.split(' ').filter(word => word.length > 0);
@@ -281,7 +284,7 @@ const BookList = () => {
                     {user && (
                       <div className="your-rating">
                         <span className="label">Your Rating</span>
-                        {renderQuickStars(book.id, userReviews.find(r => r.book_id === book.id)?.rating || 0)}
+                        {renderQuickStars(book.id, (userReviews || []).find(r => r.book_id === book.id)?.rating || 0)}
                       </div>
                     )}
                   </div>
