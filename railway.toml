@@ -3,8 +3,8 @@ builder = "dockerfile"
 
 [[services]]
 id = "backend"
-path = "backend"
+source = "backend"
 
 [[services]]
-id = "frontend"
-path = "frontend"
+id = "frontend" 
+source = "frontend"
