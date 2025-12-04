@@ -23,9 +23,7 @@ class BookSerializer(serializers.ModelSerializer):
         return obj.average_rating
 
     def get_cover_url(self, obj):
-        if obj.cover:
-            return obj.cover.url
-        return None
+        return obj.cover_url
 
     def get_reviews_count(self, obj):
         return obj.reviews.count()
