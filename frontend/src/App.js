@@ -9,12 +9,14 @@ import AddBook from './components/AddBook';
 import AddAuthor from './components/AddAuthor';
 import Dashboard from './components/Dashboard';
 import Diary from './components/Diary';
+import EnvDebug from './components/EnvDebug';
 import './App.css';
 
 function App() {
   return (
     <Router>
       <div data-bs-theme="dark" className="min-vh-100 bg-dark text-light">
+        <EnvDebug />
         <Navbar />
         <div className="content-wrapper mt-4">
           <Routes>
