@@ -7,7 +7,7 @@ from django.db.models import Avg
 from api.models import Book, Review, ReviewLike
 
 class Command(BaseCommand):
-    help = 'Populate the database with random users and reviews'
+    help = 'Create users and reviews for existing books (run after populating books)'
 
     def handle(self, *args, **options):
         self.stdout.write('Creating random users...')
