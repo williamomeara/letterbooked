@@ -16,6 +16,10 @@ COPY public/ ./public/
 # Copy all source files
 COPY . .
 
+# Accept build argument for API URL
+ARG REACT_APP_API_BASE_URL
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
+
 # Build the React application for production
 RUN npm run build
 
@@ -24,6 +28,6 @@ RUN npm install -g serve
 
 # Expose port 3000 for the application
 EXPOSE 3000
-# deploy 
+
 # Serve the production build
 CMD ["serve", "-s", "build", "-l", "3000"]

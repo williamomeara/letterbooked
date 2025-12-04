@@ -6,6 +6,11 @@ import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { AuthProvider } from './context/AuthContext';
 
+// Debug: Log API base URL at startup
+console.log('=== ENVIRONMENT DEBUG ===');
+console.log('API Base URL:', process.env.REACT_APP_API_BASE_URL);
+console.log('========================');
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
