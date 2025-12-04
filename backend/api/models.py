@@ -27,6 +27,7 @@ class Book(models.Model):
     genre = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     cover = models.ImageField(upload_to='covers/', blank=True, null=True)
+    cover_url = models.URLField(blank=True, null=True)  # CDN URL for book covers
     page_count = models.PositiveIntegerField(null=True, blank=True)
     average_rating = models.FloatField(null=True, blank=True, default=None)  # Cached average rating
 
