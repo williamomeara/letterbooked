@@ -36,13 +36,24 @@ class BookSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
+    user_id = serializers.SerializerMethodField()
     book = BookSerializer(read_only=True)
     book_id = serializers.IntegerField(write_only=True)
     likes_count = serializers.SerializerMethodField()
     is_liked_by_user = serializers.SerializerMethodField()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.query_params.get('include_book') != 'true':
+            # Remove book field unless explicitly requested
+            self.fields.pop('book', None)
+
+    def get_user_id(self, obj):
+        return obj.user.id
+
     def get_likes_count(self, obj):
-        return obj.likes.count()
+        return getattr(obj, 'likes_count', obj.likes.count())
 
     def get_is_liked_by_user(self, obj):
         request = self.context.get('request')
@@ -52,7 +63,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('id', 'user', 'book', 'book_id', 'rating', 'text', 'created_at', 'likes_count', 'is_liked_by_user')
+        fields = ('id', 'user', 'user_id', 'book', 'book_id', 'rating', 'text', 'created_at', 'likes_count', 'is_liked_by_user')
 
 class ReviewLikeSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)

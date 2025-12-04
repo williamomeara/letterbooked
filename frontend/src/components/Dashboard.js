@@ -28,7 +28,7 @@ const Dashboard = () => {
       setStats(statsRes.data);
 
       // Fetch recent reviews by user
-      const reviewsRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=${user.username}&ordering=-created_at&limit=5`, config);
+      const reviewsRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=${user.username}&ordering=-created_at&limit=5&include_book=true`, config);
       setRecentReviews(reviewsRes.data);
 
       // Fetch trending books (top-rated)

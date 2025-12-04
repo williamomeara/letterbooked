@@ -41,14 +41,12 @@ const BookDetail = () => {
     };
     const fetchReviews = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`);
-        const allReviews = response.data.filter(review => review.book.id === parseInt(id));
-        // Sort reviews by likes_count in descending order (most liked first)
-        allReviews.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
-        // Include all reviews in the list, including the user's own
-        setReviews(allReviews);
+        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?book=${id}`);
+        const bookReviews = response.data;
+        // Reviews are now sorted by backend (most liked first)
+        setReviews(bookReviews);
         if (user) {
-          const myReview = allReviews.find(review => review.user === user.username);
+          const myReview = bookReviews.find(review => review.user === user.username);
           setUserReview(myReview || null);
         }
         setLoadingReviews(false);
@@ -86,18 +84,16 @@ const BookDetail = () => {
     try {
       const [bookResponse, reviewsResponse] = await Promise.all([
         axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/${id}/`),
-        axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`)
+        axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?book=${id}`)
       ]);
       
       setBook(bookResponse.data);
       
-      const allReviews = reviewsResponse.data.filter(review => review.book.id === parseInt(id));
-      // Sort reviews by likes_count in descending order (most liked first)
-      allReviews.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
-      // Include all reviews in the list, including the user's own
-      setReviews(allReviews);
+      const bookReviews = reviewsResponse.data;
+      // Reviews are now sorted by backend (most liked first)
+      setReviews(bookReviews);
       if (user) {
-        const myReview = allReviews.find(review => review.user === user.username);
+        const myReview = bookReviews.find(review => review.user === user.username);
         setUserReview(myReview || null);
       }
     } catch (error) {
@@ -126,11 +122,11 @@ const BookDetail = () => {
       }
 
       // Re-fetch reviews to ensure data is up to date
-      const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`);
-      const allReviews = reviewsResponse.data.filter(review => review.book.id === parseInt(id));
-      setReviews(allReviews);
+      const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?book=${id}`);
+      const bookReviews = reviewsResponse.data;
+      setReviews(bookReviews);
       if (user) {
-        const myReview = allReviews.find(review => review.user === user.username);
+        const myReview = bookReviews.find(review => review.user === user.username);
         setUserReview(myReview || null);
       }
     } catch (error) {

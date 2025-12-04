@@ -14,6 +14,7 @@ const BookList = () => {
   const [hoverTimeout, setHoverTimeout] = useState(null);
   const [isHoveringPopup, setIsHoveringPopup] = useState(false);
   const [quickHoverRating, setQuickHoverRating] = useState(null);
+  const [diaryEntries, setDiaryEntries] = useState([]);
   const { user, token } = useContext(AuthContext);
 
   const renderStars = (rating) => {
@@ -56,7 +57,7 @@ const BookList = () => {
   const handleQuickRating = async (bookId, rating) => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const existingReview = userReviews.find(review => review.book.id === parseInt(bookId));
+      const existingReview = userReviews.find(review => review.book_id === parseInt(bookId));
       if (existingReview) {
         await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/${existingReview.id}/`, { rating, text: '' }, config);
       } else {
@@ -64,10 +65,33 @@ const BookList = () => {
       }
       const booksResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/`);
       setBooks(booksResponse.data);
-      const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`, config);
+      const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=me`, config);
       setUserReviews(reviewsResponse.data);
     } catch (error) {
       console.error('Error adding quick review:', error);
+    }
+  };
+
+  const handleAddToReadList = async (bookId) => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const existingEntry = diaryEntries.find(entry => entry.book.id === parseInt(bookId));
+      
+      if (existingEntry) {
+        // Update existing entry to 'to-read' if it's not already
+        if (existingEntry.status !== 'to-read') {
+          await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/${existingEntry.id}/`, { status: 'to-read' }, config);
+        }
+      } else {
+        // Create new diary entry
+        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, { book_id: bookId, status: 'to-read' }, config);
+      }
+      
+      // Refresh diary entries
+      const diaryResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, config);
+      setDiaryEntries(diaryResponse.data);
+    } catch (error) {
+      console.error('Error adding to read list:', error);
     }
   };
 
@@ -109,15 +133,25 @@ const BookList = () => {
     const fetchUserReviews = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`, config);
+        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=me`, config);
         setUserReviews(response.data);
       } catch (error) {
         console.error('Error fetching reviews', error);
       }
     };
+    const fetchDiaryEntries = async () => {
+      try {
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, config);
+        setDiaryEntries(response.data);
+      } catch (error) {
+        console.error('Error fetching diary entries', error);
+      }
+    };
     if (user) {
       fetchBooks();
       fetchUserReviews();
+      fetchDiaryEntries();
     }
   }, [user, token]);
 
@@ -247,10 +281,45 @@ const BookList = () => {
                     {user && (
                       <div className="your-rating">
                         <span className="label">Your Rating</span>
-                        {renderQuickStars(book.id, userReviews.find(r => r.book.id === book.id)?.rating || 0)}
+                        {renderQuickStars(book.id, userReviews.find(r => r.book_id === book.id)?.rating || 0)}
                       </div>
                     )}
                   </div>
+
+                  {/* Read Icon */}
+                  {user && (
+                    <div className="read-icon-section">
+                      <div
+                        className={`read-icon ${diaryEntries.some(entry => entry.book.id === book.id && entry.status === 'to-read') ? 'added' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToReadList(book.id);
+                        }}
+                        onMouseEnter={(e) => {
+                          const tooltip = e.currentTarget.querySelector('.read-tooltip');
+                          if (tooltip) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            tooltip.style.left = `${rect.left + rect.width / 2}px`;
+                            tooltip.style.top = `${rect.bottom + 5}px`;
+                            tooltip.style.opacity = '1';
+                            tooltip.style.visibility = 'visible';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          const tooltip = e.currentTarget.querySelector('.read-tooltip');
+                          if (tooltip) {
+                            tooltip.style.opacity = '0';
+                            tooltip.style.visibility = 'hidden';
+                          }
+                        }}
+                      >
+                        {diaryEntries.some(entry => entry.book.id === book.id && entry.status === 'to-read') ? '📖' : '➕'}
+                        <div className="read-tooltip">
+                          {diaryEntries.some(entry => entry.book.id === book.id && entry.status === 'to-read') ? 'Added to Reading List' : 'Want to Read'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

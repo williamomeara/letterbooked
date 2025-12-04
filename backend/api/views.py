@@ -1,10 +1,10 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, pagination
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from django.db.models import Avg
+from django.db.models import Avg, Count
 from django.utils import timezone
 from .models import Author, Book, Review, Profile, DiaryEntry, ReviewLike
 from .serializers import (
@@ -31,6 +31,11 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return request.user.is_authenticated
         # Write permissions are only allowed to the owner of the review
         return obj.user == request.user
+
+class ReviewPagination(pagination.PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 50
 
 class UserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)
@@ -90,13 +95,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        queryset = Review.objects.all()
+        queryset = Review.objects.annotate(likes_count=Count('likes'))
         user_param = self.request.query_params.get('user', None)
         if user_param:
             if user_param == 'me':
                 queryset = queryset.filter(user=self.request.user)
             else:
                 queryset = queryset.filter(user__username=user_param)
+        
+        book_param = self.request.query_params.get('book', None)
+        if book_param:
+            queryset = queryset.filter(book_id=book_param)
+            # Default ordering for book reviews: most liked first
+            queryset = queryset.order_by('-likes_count', '-created_at')
         
         ordering = self.request.query_params.get('ordering', None)
         if ordering:
@@ -107,6 +118,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
             queryset = queryset[:int(limit)]
         
         return queryset
+
+    def get_paginated_response(self, data):
+        # Disable pagination for user reviews (user=me) to get all reviews
+        user_param = self.request.query_params.get('user', None)
+        if user_param == 'me':
+            return Response(data)
+        return super().get_paginated_response(data)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
