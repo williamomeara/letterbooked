@@ -4,19 +4,19 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy package files
-COPY frontend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy public directory first
-COPY frontend/public/ ./public/
+COPY public/ ./public/
 
 # Copy source code
-COPY frontend/src/ ./src/
+COPY src/ ./src/
 
 # Copy other necessary files
-COPY frontend/ .
+COPY . .
 
 # Build the application
 RUN npm run build
