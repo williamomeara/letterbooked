@@ -9,6 +9,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Debug: Show current directory and files
+RUN pwd && ls -la
+
 # Copy public directory first
 COPY public/ ./public/
 
