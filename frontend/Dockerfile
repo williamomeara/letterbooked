@@ -1,29 +1,28 @@
-# Use Node.js 18 Alpine Linux base image for smaller size
 FROM node:18-alpine
 
-# Set working directory inside container
+# Set work directory
 WORKDIR /app
 
-# Copy package files first (for better Docker layer caching)
+# Copy package files
 COPY package*.json ./
 
-# Install Node.js dependencies
+# Install dependencies
 RUN npm install
 
-# Debug: Show current directory and files to troubleshoot Railway builds
-RUN pwd && ls -la
+# # Copy public directory first
+# COPY public/ ./public/
 
-# Copy public directory (static assets)
-COPY public/ ./public/
+# # Copy source code
+# COPY src/ ./src/
 
-# Copy all frontend source files
+# Copy other necessary files
 COPY . .
 
-# Build the React application for production
+# Build the application
 RUN npm run build
 
-# Expose port 3000 for the application
+# Expose port
 EXPOSE 3000
 
-# Start the application (Note: This runs dev server, should be overridden in Railway)
+# Start the application
 CMD ["npm", "start"]
