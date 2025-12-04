@@ -24,6 +24,6 @@ RUN npm install -g serve
 
 # Expose port 3000 for the application
 EXPOSE 3000
-
+# deploy 
 # Serve the production build
 CMD ["serve", "-s", "build", "-l", "3000"]
