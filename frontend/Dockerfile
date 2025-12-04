@@ -1,28 +1,29 @@
+# Use Node.js 18 Alpine Linux base image for smaller size
 FROM node:18-alpine
 
-# Set work directory
+# Set working directory inside container
 WORKDIR /app
 
-# Copy package files
+# Copy package files first (for better Docker layer caching)
 COPY package*.json ./
 
-# Install dependencies
+# Install Node.js dependencies
 RUN npm install
 
-# # Copy public directory first
-# COPY public/ ./public/
+# Copy public directory (static assets)
+COPY public/ ./public/
 
-# # Copy source code
-# COPY src/ ./src/
-
-# Copy other necessary files
+# Copy all source files
 COPY . .
 
-# Build the application
+# Build the React application for production
 RUN npm run build
 
-# Expose port
+# Install serve for production static file serving
+RUN npm install -g serve
+
+# Expose port 3000 for the application
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+# Serve the production build
+CMD ["serve", "-s", "build", "-l", "3000"]
