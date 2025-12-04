@@ -19,6 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
+# Set default SECRET_KEY for build (will be overridden by Railway at runtime)
+ENV SECRET_KEY=build-time-secret-key-not-for-production-use
+
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
