@@ -224,7 +224,7 @@ const BookList = () => {
                 tabIndex={0}
               >
                 <img
-                  src={book.cover_url ? `${process.env.REACT_APP_API_BASE_URL}${book.cover_url}` : '/placeholder.jpg'}
+                  src={book.cover_url || '/placeholder.jpg'}
                   alt={book.title}
                   className="poster-image"
                   loading="lazy"
@@ -243,7 +243,7 @@ const BookList = () => {
               {hoveredBook && hoveredBook.id === book.id && (
                 <div 
                   className="book-popup"
-                  style={{ backgroundImage: `linear-gradient(rgba(26,26,26,0.9), rgba(26,26,26,0.9)), url(${book.cover_url ? `${process.env.REACT_APP_API_BASE_URL}${book.cover_url}` : '/placeholder.jpg'})` }}
+                  style={{ backgroundImage: `linear-gradient(rgba(26,26,26,0.9), rgba(26,26,26,0.9)), url(${book.cover_url || '/placeholder.jpg'})` }}
                   onMouseEnter={handlePopupMouseEnter}
                   onMouseLeave={handlePopupMouseLeave}
                   onClick={() => window.location.href = `/books/${book.id}`}

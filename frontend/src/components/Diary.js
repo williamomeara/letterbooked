@@ -181,7 +181,7 @@ const Diary = () => {
                 <Link to={`/books/${entry.book.id}`} className="entry-book-link">
                   <div className="entry-book-info">
                     <img
-                      src={entry.book.cover_url ? `${process.env.REACT_APP_API_BASE_URL}${entry.book.cover_url}` : '/placeholder-book.png'}
+                      src={entry.book.cover_url || '/placeholder-book.png'}
                       alt={entry.book.title}
                       className="entry-book-cover"
                     />

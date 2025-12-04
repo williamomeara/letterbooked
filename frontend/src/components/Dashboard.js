@@ -84,7 +84,7 @@ const Dashboard = () => {
             recentReviews.map(review => (
               <Link key={review.id} to={`/books/${review.book.id}`} className="review-card-link">
                 <div className="review-card">
-                  <img src={review.book.cover_url ? `${process.env.REACT_APP_API_BASE_URL}${review.book.cover_url}` : '/placeholder-book.png'} alt={review.book.title} />
+                  <img src={review.book.cover_url || '/placeholder-book.png'} alt={review.book.title} />
                   <div className="review-content">
                     <h3>{review.book.title}</h3>
                     <p className="rating">Rating: {'★'.repeat(Math.floor(review.rating))}{'☆'.repeat(5 - Math.floor(review.rating))} ({review.rating})</p>
@@ -107,7 +107,7 @@ const Dashboard = () => {
           {trendingBooks.map(book => (
             <Link key={book.id} to={`/books/${book.id}`} className="book-card-link">
               <div className="book-card">
-                <img src={book.cover_url ? `${process.env.REACT_APP_API_BASE_URL}${book.cover_url}` : '/placeholder-book.png'} alt={book.title} />
+                <img src={book.cover_url || '/placeholder-book.png'} alt={book.title} />
                 <h3>{book.title}</h3>
                 <p>Avg Rating: {book.average_rating ? book.average_rating.toFixed(1) : 'N/A'}/5</p>
                 <p>{book.reviews_count || 0} reviews</p>

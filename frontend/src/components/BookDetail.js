@@ -196,7 +196,7 @@ const BookDetail = () => {
               <div className="poster-container">
                 {book.cover_url ? (
                   <img
-                    src={`${process.env.REACT_APP_API_BASE_URL}${book.cover_url}`}
+                    src={book.cover_url}
                     alt={book.title}
                     className="book-poster"
                   />
