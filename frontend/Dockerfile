@@ -9,7 +9,13 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Copy public directory first
+COPY public/ ./public/
+
 # Copy source code
+COPY src/ ./src/
+
+# Copy other necessary files
 COPY . .
 
 # Build the application
