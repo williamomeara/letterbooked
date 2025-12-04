@@ -5,6 +5,9 @@ builder = "dockerfile"
 id = "backend"
 path = "backend"
 
+[services.build]
+buildCommand = "python manage.py collectstatic --noinput"
+
 [[services]]
 id = "frontend"
 path = "frontend"
