@@ -89,20 +89,13 @@ class Command(BaseCommand):
                         average_rating=average_rating if average_rating else None
                     )
                     
-                    # Download cover image
+                    # Store cover URL from Open Library (no download needed)
                     cover_id = doc.get('cover_i')
                     if cover_id:
-                        cover_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"  # Large cover
-                        try:
-                            img_response = requests.get(cover_url)
-                            img_response.raise_for_status()
-                            import re
-                            safe_title = re.sub(r'[^\w\-_\. ]', '', title)[:50].strip().replace(' ', '_')
-                            filename = f"{safe_title}.jpg"
-                            book.cover.save(filename, ContentFile(img_response.content), save=True)
-                            self.stdout.write(f'Saved cover for: {title}')
-                        except requests.RequestException as e:
-                            self.stdout.write(f'Failed to download cover for: {title} - {e}')
+                        # Use Open Library's CDN for cover images - no storage needed
+                        book.cover_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
+                        book.save()
+                        self.stdout.write(f'Set cover URL for: {title}')
                     
                     # Create authors
                     for author_name in authors:
