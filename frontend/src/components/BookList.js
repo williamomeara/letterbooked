@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 import './BookList.css';
 
@@ -56,19 +56,18 @@ const BookList = () => {
 
   const handleQuickRating = async (bookId, rating) => {
     try {
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       const existingReview = (userReviews || []).find(review => review.book_id === parseInt(bookId));
       
       if (existingReview) {
         // Update existing review - optimistic update
-        const response = await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/${existingReview.id}/`, { rating, text: '' }, config);
+        const response = await api.patch(`/api/reviews/${existingReview.id}/`, { rating, text: '' });
         const updatedReview = { ...existingReview, rating };
         setUserReviews(prevReviews => 
           prevReviews.map(r => r.id === existingReview.id ? updatedReview : r)
         );
       } else {
         // Create new review - optimistic update
-        const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`, { book_id: bookId, rating, text: '' }, config);
+        const response = await api.post(`/api/reviews/`, { book_id: bookId, rating, text: '' });
         const newReview = {
           ...response.data,
           book_id: parseInt(bookId), // Ensure book_id is set
@@ -81,15 +80,14 @@ const BookList = () => {
       }
       
       // Update books to refresh average ratings
-      const booksResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/`);
+      const booksResponse = await api.get(`/api/books/`);
       setBooks(booksResponse.data);
       
     } catch (error) {
       console.error('Error adding quick review:', error);
       // Re-fetch user reviews on error to ensure consistency
       try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=me`, config);
+        const reviewsResponse = await api.get(`/api/reviews/?user=me`);
         setUserReviews(reviewsResponse.data);
       } catch (fetchError) {
         console.error('Error re-fetching reviews:', fetchError);
@@ -99,21 +97,20 @@ const BookList = () => {
 
   const handleAddToReadList = async (bookId) => {
     try {
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       const existingEntry = (diaryEntries || []).find(entry => entry.book.id === parseInt(bookId));
       
       if (existingEntry) {
         // Update existing entry to 'to-read' if it's not already
         if (existingEntry.status !== 'to-read') {
-          await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/${existingEntry.id}/`, { status: 'to-read' }, config);
+          await api.patch(`/api/diary-entries/${existingEntry.id}/`, { status: 'to-read' });
         }
       } else {
         // Create new diary entry
-        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, { book_id: bookId, status: 'to-read' }, config);
+        await api.post(`/api/diary-entries/`, { book_id: bookId, status: 'to-read' });
       }
       
       // Refresh diary entries
-      const diaryResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, config);
+      const diaryResponse = await api.get(`/api/diary-entries/`);
       setDiaryEntries(diaryResponse.data);
     } catch (error) {
       console.error('Error adding to read list:', error);
@@ -149,7 +146,7 @@ const BookList = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/`);
+        const response = await api.get(`/api/books/`);
         setBooks(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching books', error);
@@ -158,8 +155,7 @@ const BookList = () => {
     };
     const fetchUserReviews = async () => {
       try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=me`, config);
+        const response = await api.get(`/api/reviews/?user=me`);
         setUserReviews(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching reviews', error);
@@ -168,8 +164,7 @@ const BookList = () => {
     };
     const fetchDiaryEntries = async () => {
       try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, config);
+        const response = await api.get(`/api/diary-entries/`);
         setDiaryEntries(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching diary entries', error);
@@ -181,7 +176,7 @@ const BookList = () => {
       fetchUserReviews();
       fetchDiaryEntries();
     }
-  }, [user, token]);
+  }, [user]);
 
   const filteredBooks = (books || []).filter(book => {
     if (!book.cover_url) return false;

@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import api from '../utils/api';
 
 const ReviewForm = ({ bookId, existingReview, loading, onReviewAdded }) => {
   const [rating, setRating] = useState(5.0);
   const [hoverRating, setHoverRating] = useState(null);
   const [text, setText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const { token } = useContext(AuthContext);
 
   useEffect(() => {
     if (existingReview) {
@@ -61,16 +59,11 @@ const ReviewForm = ({ bookId, existingReview, loading, onReviewAdded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
       if (existingReview) {
-        await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/${existingReview.id}/`, { rating, text }, config);
+        await api.patch(`/api/reviews/${existingReview.id}/`, { rating, text });
         setIsEditing(false); // Return to read-only mode after successful edit
       } else {
-        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`, { book_id: bookId, rating, text }, config);
+        await api.post(`/api/reviews/`, { book_id: bookId, rating, text });
       }
       onReviewAdded();
     } catch (error) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 import ReviewForm from './ReviewForm';
 import './BookDetail.css';
@@ -33,7 +33,7 @@ const BookDetail = () => {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/${id}/`);
+        const response = await api.get(`/api/books/${id}/`);
         setBook(response.data);
       } catch (error) {
         console.error('Error fetching book', error);
@@ -41,7 +41,7 @@ const BookDetail = () => {
     };
     const fetchReviews = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?book=${id}`);
+        const response = await api.get(`/api/reviews/?book=${id}`);
         const bookReviews = response.data;
         // Reviews are now sorted by backend (most liked first)
         setReviews(bookReviews);
@@ -57,7 +57,7 @@ const BookDetail = () => {
     };
     const fetchDiaryEntry = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`);
+        const response = await api.get(`/api/diary-entries/`);
         const entry = response.data.find(e => e.book.id === parseInt(id));
         if (entry) {
           setDiaryEntry(entry);
@@ -83,8 +83,8 @@ const BookDetail = () => {
     // Re-fetch reviews and book data after review submission
     try {
       const [bookResponse, reviewsResponse] = await Promise.all([
-        axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/${id}/`),
-        axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?book=${id}`)
+        api.get(`/api/books/${id}/`),
+        api.get(`/api/reviews/?book=${id}`)
       ]);
       
       setBook(bookResponse.data);
@@ -101,26 +101,20 @@ const BookDetail = () => {
     }
   };  const handleLikeReview = async (reviewId, isLiked) => {
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      };
-
       if (isLiked) {
         // Unlike: find and delete the like
-        const likesResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/review-likes/`, config);
+        const likesResponse = await api.get(`/api/review-likes/`);
         const userLike = likesResponse.data.find(like => like.review.id === reviewId);
         if (userLike) {
-          await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/api/review-likes/${userLike.id}/`, config);
+          await api.delete(`/api/review-likes/${userLike.id}/`);
         }
       } else {
         // Like: create a new like
-        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/review-likes/`, { review_id: reviewId }, config);
+        await api.post(`/api/review-likes/`, { review_id: reviewId });
       }
 
       // Re-fetch reviews to ensure data is up to date
-      const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?book=${id}`);
+      const reviewsResponse = await api.get(`/api/reviews/?book=${id}`);
       const bookReviews = reviewsResponse.data;
       setReviews(bookReviews);
       if (user) {
@@ -135,25 +129,19 @@ const BookDetail = () => {
 
   const updateDiaryStatus = async (newStatus) => {
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      };
-
       const data = { status: newStatus };
 
       let response;
       if (diaryEntry) {
         // Update existing entry
-        response = await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/${diaryEntry.id}/`, data, config);
+        response = await api.patch(`/api/diary-entries/${diaryEntry.id}/`, data);
       } else {
         // Create new entry
-        response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, { book_id: id, ...data }, config);
+        response = await api.post(`/api/diary-entries/`, { book_id: id, ...data });
       }
 
       // Refresh diary entry data from server
-      const refreshResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`);
+      const refreshResponse = await api.get(`/api/diary-entries/`);
       const entry = refreshResponse.data.find(e => e.book.id === parseInt(id));
       if (entry) {
         setDiaryEntry(entry);

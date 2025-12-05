@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 import './Diary.css';
 
@@ -34,9 +34,7 @@ const Diary = () => {
 
   const fetchEntries = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/`, config);
+      const response = await api.get(`/api/diary-entries/`);
       setEntries(response.data);
       setLoading(false);
     } catch (error) {
@@ -48,14 +46,11 @@ const Diary = () => {
   const handleUpdateEntry = async (entryId, newStatus) => {
     setUpdatingEntry(entryId);
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
       const data = {
         status: newStatus
       };
 
-      const response = await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/diary-entries/${entryId}/`, data, config);
+      const response = await api.patch(`/api/diary-entries/${entryId}/`, data);
       await fetchEntries(); // Refresh entries
     } catch (error) {
       console.error('Error updating diary entry:', error);

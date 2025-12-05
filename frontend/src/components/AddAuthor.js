@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 
 const AddAuthor = () => {
@@ -10,7 +10,7 @@ const AddAuthor = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/authors/`, { name, bio });
+      await api.post(`/api/authors/`, { name, bio });
       alert('Author added');
     } catch (error) {
       alert('Error adding author');

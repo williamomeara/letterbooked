@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../utils/api';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -20,23 +20,20 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
       // Fetch user stats
-      const statsRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/user/stats/`, config);
+      const statsRes = await api.get(`/api/user/stats/`);
       setStats(statsRes.data);
 
       // Fetch recent reviews by user
-      const reviewsRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=${user.username}&ordering=-created_at&limit=5&include_book=true`, config);
+      const reviewsRes = await api.get(`/api/reviews/?user=${user.username}&ordering=-created_at&limit=5&include_book=true`);
       setRecentReviews(reviewsRes.data);
 
       // Fetch trending books (top-rated)
-      const trendingRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/?ordering=-average_rating&limit=10`);
+      const trendingRes = await api.get(`/api/books/?ordering=-average_rating&limit=10`);
       setTrendingBooks(trendingRes.data);
 
       // Fetch recent activity (likes on user's reviews, etc.)
-      const activityRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/user/activity/`, config);
+      const activityRes = await api.get(`/api/user/activity/`);
       setActivity(activityRes.data);
 
       setLoading(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 
 const AddBook = () => {
@@ -12,7 +12,7 @@ const AddBook = () => {
   useEffect(() => {
     const fetchAuthors = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/authors/`);
+        const response = await api.get(`/api/authors/`);
         setAuthors(response.data);
       } catch (error) {
         console.error('Error fetching authors', error);
@@ -24,7 +24,7 @@ const AddBook = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/books/`, { title, authors: selectedAuthors, description });
+      await api.post(`/api/books/`, { title, authors: selectedAuthors, description });
       alert('Book added');
     } catch (error) {
       alert('Error adding book');
