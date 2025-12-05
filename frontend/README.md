@@ -1,4 +1,6 @@
-# Getting Started with Create React App
+# Letterbooked Frontend
+
+The React frontend for Letterbooked, a book review and rating application.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
