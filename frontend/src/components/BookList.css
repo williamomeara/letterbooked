@@ -604,6 +604,12 @@ body {
   padding: 0 15px;
 }
 
+@media (max-width: 768px) {
+  #content-nav {
+    padding: 0 5px;
+  }
+}
+
 .filter-bar {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
