@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
-import { Container, Row, Col, Form, ButtonGroup, Button, Offcanvas } from 'react-bootstrap';
-import { FiFilter } from 'react-icons/fi';
+import { Container, Row, Col, Form, ButtonGroup, Button, Offcanvas, InputGroup } from 'react-bootstrap';
+import { FiFilter, FiSearch } from 'react-icons/fi';
 import { Range } from 'react-range';
 import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
@@ -264,59 +264,51 @@ const BookList = () => {
 
   return (
     <div className="book-list-container">
-      {/* Enhanced Header */}
-      <div className="header-section">
-        <div className="container-fluid">
-          <div className="header-content">
-            <div className="header-title">
-              <h1>Discover Books</h1>
-              <p className="text-muted">Explore thousands of books and share your reviews</p>
-            </div>
-            <div className="search-wrapper">
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search by title or author..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <i className="bi bi-search search-icon"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Content Navigation */}
       <div id="content-nav">
         {/* Filter Bar */}
         <div className="filter-bar">
-          <Row className="align-items-center">
-            <Col xs={12} md={4} className="mb-2 mb-md-0">
+          <div className="d-flex flex-wrap justify-content-between align-items-center">
+            <div className="me-2 mb-2">
               <ButtonGroup size="sm">
-                <Button variant={sortBy === 'title' ? 'success' : 'outline-primary'} onClick={() => setSortBy('title')}>Title</Button>
-                <Button variant={sortBy === 'author' ? 'success' : 'outline-primary'} onClick={() => setSortBy('author')}>Author</Button>
-                <Button variant={sortBy === 'rating' ? 'success' : 'outline-primary'} onClick={() => setSortBy('rating')}>Rating</Button>
+                <Button variant={sortBy === 'title' ? 'success' : 'secondary'} className={sortBy === 'title' ? 'selected-sort' : ''} onClick={() => setSortBy('title')}>Title</Button>
+                <Button variant={sortBy === 'author' ? 'success' : 'secondary'} className={sortBy === 'author' ? 'selected-sort' : ''} onClick={() => setSortBy('author')}>Author</Button>
+                <Button variant={sortBy === 'rating' ? 'success' : 'secondary'} className={sortBy === 'rating' ? 'selected-sort' : ''} onClick={() => setSortBy('rating')}>Rating</Button>
               </ButtonGroup>
-            </Col>
-            <Col xs={12} md={3} className="mb-2 mb-md-0">
+            </div>
+            <div className="me-2 mb-2">
               <ButtonGroup size="sm">
-                <Button variant={sortOrder === 'asc' ? 'success' : 'outline-primary'} onClick={() => setSortOrder('asc')}>
+                <Button variant={sortOrder === 'asc' ? 'success' : 'secondary'} className={sortOrder === 'asc' ? 'selected-sort' : ''} onClick={() => setSortOrder('asc')}>
                   {isMobile ? '↑' : 'Ascending'}
                 </Button>
-                <Button variant={sortOrder === 'desc' ? 'success' : 'outline-primary'} onClick={() => setSortOrder('desc')}>
+                <Button variant={sortOrder === 'desc' ? 'success' : 'secondary'} className={sortOrder === 'desc' ? 'selected-sort' : ''} onClick={() => setSortOrder('desc')}>
                   {isMobile ? '↓' : 'Descending'}
                 </Button>
               </ButtonGroup>
-            </Col>
-            <Col xs={12} md={2} className="mb-2 mb-md-0">
+            </div>
+            <div className="flex-grow-1 me-2 mb-2">
+              <InputGroup size="sm">
+                <InputGroup.Text className="bg-dark border-secondary text-light">
+                  <FiSearch />
+                </InputGroup.Text>
+                <Form.Control
+                  type="text"
+                  placeholder="Search books..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="bg-dark text-light border-secondary"
+                />
+              </InputGroup>
+            </div>
+            <div className="me-2 mb-2">
               <Button variant="outline-secondary" size="sm" onClick={() => setShowModal(true)}>
                 <FiFilter />
               </Button>
-            </Col>
-            <Col xs={12} md={3} className="text-md-end">
+            </div>
+            <div className="ms-auto mb-2">
               <div className="titles-count">{paginatedBooks.length} books</div>
-            </Col>
-          </Row>
+            </div>
+          </div>
         </div>
 
         {/* Advanced Filters Offcanvas */}

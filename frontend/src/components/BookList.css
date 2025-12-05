@@ -857,13 +857,20 @@ body {
   display: none; /* Hide old dropdowns */
 }
 
-.smenu-wrapper,
-.smenu-label,
-.smenu,
-.smenu label,
-.smenu-menu,
-.smenu-menu li,
-.smenu-menu .item,
-.smenu-menu .selected {
-  display: none; /* Hide all legacy dropdown elements */
+.btn-success:active {
+  background-color: var(--accent-green) !important;
+  border-color: var(--accent-green) !important;
+  color: white !important;
+}
+
+.btn.selected-sort {
+  background-color: var(--accent-green) !important;
+  border-color: var(--accent-green) !important;
+  color: white !important;
+}
+
+.btn.selected-sort:active {
+  background-color: var(--accent-green) !important;
+  border-color: var(--accent-green) !important;
+  color: white !important;
 }
