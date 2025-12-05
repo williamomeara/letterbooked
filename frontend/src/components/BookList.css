@@ -606,14 +606,18 @@ body {
 
 @media (max-width: 768px) {
   #content-nav {
-    padding: 0 5px;
+    padding: 0;
+  }
+  .filter-bar {
+    margin-left: -15px;
+    margin-right: -15px;
   }
 }
 
 .filter-bar {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
   padding: 12px;
   margin-bottom: 20px;
 }
