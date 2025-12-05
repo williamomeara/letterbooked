@@ -229,3 +229,37 @@ def user_activity(request):
     activities = activities[:10]  # Limit to 10 most recent
 
     return Response(activities)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def request_analytics(request):
+    """
+    Analytics endpoint to show request patterns and usage statistics.
+    Requires admin permissions for security.
+    """
+    if not request.user.profile.role == 'admin':
+        return Response({'error': 'Admin access required'}, status=403)
+
+    # Get basic stats
+    total_reviews = Review.objects.count()
+    total_books = Book.objects.count()
+    total_users = User.objects.count()
+    total_likes = ReviewLike.objects.count()
+
+    # Get popular endpoints (this would need actual request logging to be accurate)
+    # For now, show API usage patterns based on data
+
+    return Response({
+        'overview': {
+            'total_reviews': total_reviews,
+            'total_books': total_books,
+            'total_users': total_users,
+            'total_likes': total_likes,
+        },
+        'recent_activity': {
+            'reviews_last_24h': Review.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=1)).count(),
+            'likes_last_24h': ReviewLike.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=1)).count(),
+        },
+        'note': 'Enable full request logging by checking Railway logs after this deployment'
+    })
