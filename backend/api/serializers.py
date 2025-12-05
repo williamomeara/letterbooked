@@ -60,6 +60,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         return getattr(obj, 'likes_count', obj.likes.count())
 
     def get_is_liked_by_user(self, obj):
+        # Use the annotated field if available, otherwise fall back to the query
+        if hasattr(obj, 'is_liked_by_user'):
+            return obj.is_liked_by_user
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.likes.filter(user=request.user).exists()

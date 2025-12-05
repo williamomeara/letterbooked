@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Exists, OuterRef
 from django.utils import timezone
 from .models import Author, Book, Review, Profile, DiaryEntry, ReviewLike
 from .serializers import (
@@ -100,28 +100,40 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Optimize queries: select_related for ForeignKeys, prefetch_related for reverse relations
         queryset = Review.objects.select_related('user', 'book').prefetch_related('likes').annotate(likes_count=Count('likes'))
-        
+
+        # Annotate whether current user has liked each review to avoid N+1 queries
+        user = self.request.user
+        if user.is_authenticated:
+            queryset = queryset.annotate(
+                is_liked_by_user=Exists(
+                    ReviewLike.objects.filter(
+                        review=OuterRef('pk'),
+                        user=user
+                    )
+                )
+            )
+
         user_param = self.request.query_params.get('user', None)
         if user_param:
             if user_param == 'me':
                 queryset = queryset.filter(user=self.request.user)
             else:
                 queryset = queryset.filter(user__username=user_param)
-        
+
         book_param = self.request.query_params.get('book', None)
         if book_param:
             queryset = queryset.filter(book_id=book_param)
             # Default ordering for book reviews: most liked first
             queryset = queryset.order_by('-likes_count', '-created_at')
-        
+
         ordering = self.request.query_params.get('ordering', None)
         if ordering:
             queryset = queryset.order_by(ordering)
-        
+
         limit = self.request.query_params.get('limit', None)
         if limit:
             queryset = queryset[:int(limit)]
-        
+
         return queryset
 
     def get_paginated_response(self, data):
