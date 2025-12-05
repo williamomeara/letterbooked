@@ -22,11 +22,14 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('silk/', include('silk.urls', namespace='silk')),
 ]
 
 if settings.DEBUG:
+    # Development only: add silk profiler and media files
+    urlpatterns.append(path('silk/', include('silk.urls', namespace='silk')))
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 else:
+    # Production: serve static files
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     # Serve static files in production (handled by WhiteNoise middleware)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

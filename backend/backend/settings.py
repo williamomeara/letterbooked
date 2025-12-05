@@ -45,14 +45,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'silk',
     'api',
 ]
+
+# Add django-silk only in development
+if DEBUG:
+    INSTALLED_APPS.append('silk')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'silk.middleware.SilkyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -61,6 +63,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Add django-silk middleware only in development
+if DEBUG:
+    MIDDLEWARE.insert(2, 'silk.middleware.SilkyMiddleware')
 
 ROOT_URLCONF = 'backend.urls'
 
