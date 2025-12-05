@@ -80,6 +80,21 @@ body {
   }
 }
 
+/* Mobile sticky navbar */
+@media (max-width: 768px) {
+  .custom-navbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1030 !important;
+    background-color: #1c2127 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .content-wrapper {
+    padding-top: 20px;
+  }
+}
+
 /* Breakpoint for smaller breakpoints */
 @media only screen and (max-width: 969px) {
   .content-wrapper,

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Author, Publisher, Book, Review, List, Follow, Tag, BookTag, ReviewTag, Activity, Profile, DiaryEntry, ReviewLike
+from .models import Author, Publisher, Book, Review, List, Follow, Tag, BookTag, ReviewTag, Activity, Profile, DiaryEntry, ReviewLike, Genre
 
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,9 +12,15 @@ class PublisherSerializer(serializers.ModelSerializer):
         model = Publisher
         fields = '__all__'
 
+class GenreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Genre
+        fields = '__all__'
+
 class BookSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True, read_only=True)
     publisher = PublisherSerializer(read_only=True)
+    genres = GenreSerializer(many=True, read_only=True)
     avg_rating = serializers.SerializerMethodField()
     cover_url = serializers.SerializerMethodField()
     reviews_count = serializers.SerializerMethodField()
@@ -30,7 +36,7 @@ class BookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['id', 'title', 'description', 'isbn', 'genre', 'page_count', 'publication_date', 'publisher', 'authors', 'average_rating', 'avg_rating', 'cover_url', 'reviews_count']
+        fields = ['id', 'title', 'description', 'isbn', 'genres', 'page_count', 'publication_date', 'publisher', 'authors', 'average_rating', 'avg_rating', 'cover_url', 'reviews_count']
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)

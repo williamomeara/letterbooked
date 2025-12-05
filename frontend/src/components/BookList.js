@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { useMediaQuery } from 'react-responsive';
+import { Container, Row, Col, Form, ButtonGroup, Button, Offcanvas } from 'react-bootstrap';
+import { FiFilter } from 'react-icons/fi';
+import { Range } from 'react-range';
 import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 import './BookList.css';
@@ -16,18 +20,16 @@ const BookList = () => {
   const [quickHoverRating, setQuickHoverRating] = useState(null);
   const [diaryEntries, setDiaryEntries] = useState([]);
   const [clickedBookId, setClickedBookId] = useState(null); // Track clicked book on mobile
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [showModal, setShowModal] = useState(false);
+  const [minYear, setMinYear] = useState(1900);
+  const [maxYear, setMaxYear] = useState(2025);
+  const isMobile = useMediaQuery({ maxWidth: 768 });
   const [sortBy, setSortBy] = useState('title');
   const [sortOrder, setSortOrder] = useState('asc');
-  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedGenres, setSelectedGenres] = useState([]);
   const { user, token } = useContext(AuthContext);
 
-  // Detect mobile/desktop view
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const genres = Array.from(new Set(books.flatMap(book => book.genres?.map(g => g.name) || []))).sort();
 
   // Close popup when scrolling on mobile
   useEffect(() => {
@@ -204,14 +206,14 @@ const BookList = () => {
       if (!book.cover_url) return false;
       const searchLower = search.toLowerCase();
       const searchWords = searchLower.split(' ').filter(word => word.length > 0);
-      if (searchWords.length === 0 && !selectedGenre) return true;
+      if (searchWords.length === 0 && selectedGenres.length === 0) return true;
       
       const titleLower = book.title.toLowerCase();
       const authorNames = book.authors ? book.authors.map(a => a.name.toLowerCase()).join(' ') : '';
       const matchesSearch = searchWords.length === 0 || searchWords.some(word =>
         titleLower.includes(word) || authorNames.includes(word)
       );
-      const matchesGenre = !selectedGenre || (book.genres && book.genres.some(g => g.name === selectedGenre));
+      const matchesGenre = selectedGenres.length === 0 || (book.genres && book.genres.some(g => selectedGenres.includes(g.name)));
       
       return matchesSearch && matchesGenre;
     })
@@ -286,78 +288,137 @@ const BookList = () => {
 
       {/* Content Navigation */}
       <div id="content-nav">
-        <div className="sorting-selects">
-          <div className="smenu-wrapper">
-            <div className="smenu-label">Sort by:</div>
-            <div className="smenu">
-              <input type="checkbox" id="sort-menu" style={{ display: 'none' }} />
-              <label htmlFor="sort-menu" onClick={() => {}}>
-                {sortBy === 'title' && 'Title'}
-                {sortBy === 'author' && 'Author'}
-                {sortBy === 'rating' && 'Rating'}
-                {sortBy === 'year' && 'Year'}
-                <span className={`s icon ${sortOrder === 'desc' ? 'rotated' : ''}`}></span>
-              </label>
-              <ul className="smenu-menu">
-                <li className={sortBy === 'title' ? 'selected' : 'item'} onClick={() => setSortBy('title')}>Title</li>
-                <li className={sortBy === 'author' ? 'selected' : 'item'} onClick={() => setSortBy('author')}>Author</li>
-                <li className={sortBy === 'rating' ? 'selected' : 'item'} onClick={() => setSortBy('rating')}>Rating</li>
-                <li className={sortBy === 'year' ? 'selected' : 'item'} onClick={() => setSortBy('year')}>Year</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="smenu-wrapper">
-            <div className="smenu-label">Order:</div>
-            <div className="smenu">
-              <input type="checkbox" id="order-menu" style={{ display: 'none' }} />
-              <label htmlFor="order-menu">
-                {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-              </label>
-              <ul className="smenu-menu">
-                <li className={sortOrder === 'asc' ? 'selected' : 'item'} onClick={() => setSortOrder('asc')}>Ascending</li>
-                <li className={sortOrder === 'desc' ? 'selected' : 'item'} onClick={() => setSortOrder('desc')}>Descending</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="smenu-wrapper">
-            <div className="smenu-label">Genre:</div>
-            <div className="smenu">
-              <input type="checkbox" id="genre-menu" style={{ display: 'none' }} />
-              <label htmlFor="genre-menu">
-                {selectedGenre || 'All Genres'}
-              </label>
-              <ul className="smenu-menu">
-                <li className={!selectedGenre ? 'selected' : 'item'} onClick={() => setSelectedGenre('')}>All Genres</li>
-                {Array.from(new Set(books.flatMap(book => book.genres?.map(g => g.name) || [])))
-                  .sort()
-                  .map(genre => (
-                    <li 
-                      key={genre} 
-                      className={selectedGenre === genre ? 'selected' : 'item'} 
-                      onClick={() => setSelectedGenre(genre)}
-                    >
-                      {genre}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          </div>
+        {/* Filter Bar */}
+        <div className="filter-bar">
+          <Row className="align-items-center">
+            <Col xs={12} md={4} className="mb-2 mb-md-0">
+              <ButtonGroup size="sm">
+                <Button variant={sortBy === 'title' ? 'success' : 'outline-primary'} onClick={() => setSortBy('title')}>Title</Button>
+                <Button variant={sortBy === 'author' ? 'success' : 'outline-primary'} onClick={() => setSortBy('author')}>Author</Button>
+                <Button variant={sortBy === 'rating' ? 'success' : 'outline-primary'} onClick={() => setSortBy('rating')}>Rating</Button>
+              </ButtonGroup>
+            </Col>
+            <Col xs={12} md={3} className="mb-2 mb-md-0">
+              <ButtonGroup size="sm">
+                <Button variant={sortOrder === 'asc' ? 'success' : 'outline-primary'} onClick={() => setSortOrder('asc')}>
+                  {isMobile ? '↑' : 'Ascending'}
+                </Button>
+                <Button variant={sortOrder === 'desc' ? 'success' : 'outline-primary'} onClick={() => setSortOrder('desc')}>
+                  {isMobile ? '↓' : 'Descending'}
+                </Button>
+              </ButtonGroup>
+            </Col>
+            <Col xs={12} md={2} className="mb-2 mb-md-0">
+              <Button variant="outline-secondary" size="sm" onClick={() => setShowModal(true)}>
+                <FiFilter />
+              </Button>
+            </Col>
+            <Col xs={12} md={3} className="text-md-end">
+              <div className="titles-count">{paginatedBooks.length} books</div>
+            </Col>
+          </Row>
         </div>
+
+        {/* Advanced Filters Offcanvas */}
+        <Offcanvas show={showModal} onHide={() => setShowModal(false)} placement="start" className="bg-dark text-light">
+          <Offcanvas.Header closeButton className="border-secondary">
+            <Offcanvas.Title>Advanced Filters</Offcanvas.Title>
+          </Offcanvas.Header>
+          <Offcanvas.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Genres</Form.Label>
+              <div className="d-flex flex-wrap gap-2">
+                {genres.map(genre => (
+                  <Button
+                    key={genre}
+                    variant={selectedGenres.includes(genre) ? 'success' : 'outline-secondary'}
+                    size="sm"
+                    onClick={() => {
+                      if (selectedGenres.includes(genre)) {
+                        setSelectedGenres(selectedGenres.filter(g => g !== genre));
+                      } else {
+                        setSelectedGenres([...selectedGenres, genre]);
+                      }
+                    }}
+                  >
+                    {genre}
+                  </Button>
+                ))}
+              </div>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <div style={{ position: 'relative', paddingBottom: '25px' }}>
+                <Range
+                  step={1}
+                  min={1900}
+                  max={2025}
+                  values={[minYear, maxYear]}
+                  onChange={(values) => {
+                    setMinYear(values[0]);
+                    setMaxYear(values[1]);
+                  }}
+                  renderTrack={({ props, children }) => (
+                    <div
+                      {...props}
+                      style={{
+                        ...props.style,
+                        height: '6px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: '5px',
+                        position: 'relative',
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${((minYear - 1900) / (2025 - 1900)) * 100}%`,
+                          width: `${((maxYear - minYear) / (2025 - 1900)) * 100}%`,
+                          height: '100%',
+                          backgroundColor: 'var(--accent-green)',
+                          borderRadius: '5px',
+                          opacity: 0.5,
+                        }}
+                      />
+                      {children}
+                    </div>
+                  )}
+                  renderThumb={({ props }) => (
+                    <div
+                      {...props}
+                      style={{
+                        ...props.style,
+                        height: '16px',
+                        width: '16px',
+                        backgroundColor: 'var(--accent-green)',
+                        borderRadius: '50%',
+                        border: 'none',
+                        boxShadow: '0 0 0 2px rgba(40, 167, 69, 0.3)',
+                      }}
+                    />
+                  )}
+                />
+                <span style={{ position: 'absolute', left: 0, bottom: '-5px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{minYear}</span>
+                <span style={{ position: 'absolute', right: 0, bottom: '-5px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{maxYear}</span>
+              </div>
+            </Form.Group>
+            {/* Add more filters here in the future */}
+          </Offcanvas.Body>
+        </Offcanvas>
       </div>
 
       {/* Books Section */}
       <section className="section col-24 col-main">
-        <div id="films-browser-list-container" className="books-grid">
-          {paginatedBooks.map(book => (
-            <div
-              key={book.id}
-              className={`book-poster-wrapper ${hoveredBook && hoveredBook.id === book.id ? 'hovered' : ''} ${clickedBookId === book.id ? 'clicked' : ''}`}
-              onMouseEnter={() => handleMouseEnter(book)}
-              onMouseLeave={handleMouseLeave}
-              onClick={() => isMobile && setClickedBookId(clickedBookId === book.id ? null : book.id)}
-            >
+        <Container>
+          <Row>
+            {paginatedBooks.map(book => (
+              <Col key={book.id} xs={6} sm={4} md={3} lg={2} xl={2} className="mb-3 p-0">
+                <div
+                  className={`book-poster-wrapper ${hoveredBook && hoveredBook.id === book.id ? 'hovered' : ''} ${clickedBookId === book.id ? 'clicked' : ''}`}
+                  style={{ position: 'relative' }}
+                  onMouseEnter={() => handleMouseEnter(book)}
+                  onMouseLeave={handleMouseLeave}
+                  onClick={() => isMobile && setClickedBookId(clickedBookId === book.id ? null : book.id)}
+                >
               <div
                 className="book-poster"
                 onClick={(e) => {
@@ -478,9 +539,11 @@ const BookList = () => {
                 </div>
               )}
             </div>
+          </Col>
           ))}
-        </div>
-      </section>
+      </Row>
+    </Container>
+  </section>
 
       {/* Mobile Popup Backdrop */}
       {isMobile && clickedBookId && (

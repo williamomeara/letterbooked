@@ -1,8 +1,9 @@
 import os
 import requests
+import random
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
-from api.models import Author, Publisher, Book
+from api.models import Author, Publisher, Book, Genre
 
 class Command(BaseCommand):
     help = 'Populate the database with popular fantasy books from Open Library API'
@@ -53,8 +54,10 @@ class Command(BaseCommand):
                         published_date = None
                     description = doc.get('description', {}).get('value', '') if isinstance(doc.get('description'), dict) else doc.get('description', '')
                     page_count = doc.get('number_of_pages_median', 0)
-                    genres = doc.get('subject', [])
-                    genre = genres[0] if genres else 'Fantasy'
+                    # Random genres for variety
+                    possible_genres = ['Fantasy', 'Science Fiction', 'Adventure', 'Mystery', 'Romance', 'Horror', 'Thriller', 'Historical Fiction', 'Young Adult', 'Children\'s Literature']
+                    num_genres = random.randint(1, 3)
+                    genres = random.sample(possible_genres, num_genres)
                     
                     # Get ISBN
                     isbn = doc.get('isbn', [None])[0] if doc.get('isbn') else None
@@ -82,12 +85,17 @@ class Command(BaseCommand):
                         title=title,
                         description=description[:500] if description else '',
                         isbn=isbn,
-                        genre=genre,
                         page_count=page_count,
                         publication_date=published_date,
                         publisher=publisher,
                         average_rating=average_rating if average_rating else None
                     )
+                    
+                    # Add genres
+                    for genre_name in genres:
+                        if genre_name:  # Skip empty
+                            genre, _ = Genre.objects.get_or_create(name=genre_name)
+                            book.genres.add(genre)
                     
                     # Store cover URL from Open Library (no download needed)
                     cover_id = doc.get('cover_i')
