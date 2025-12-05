@@ -73,7 +73,10 @@ class BookViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Book.objects.all()
+        # Use select_related() for ForeignKey relationships (publisher)
+        # Use prefetch_related() for ManyToMany and reverse relations (authors, reviews)
+        queryset = Book.objects.select_related('publisher').prefetch_related('authors', 'reviews')
+        
         ordering = self.request.query_params.get('ordering', None)
         if ordering:
             queryset = queryset.order_by(ordering)
@@ -95,7 +98,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        queryset = Review.objects.annotate(likes_count=Count('likes'))
+        # Optimize queries: select_related for ForeignKeys, prefetch_related for reverse relations
+        queryset = Review.objects.select_related('user', 'book').prefetch_related('likes').annotate(likes_count=Count('likes'))
+        
         user_param = self.request.query_params.get('user', None)
         if user_param:
             if user_param == 'me':
