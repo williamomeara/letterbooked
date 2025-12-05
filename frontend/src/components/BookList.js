@@ -58,17 +58,42 @@ const BookList = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const existingReview = (userReviews || []).find(review => review.book_id === parseInt(bookId));
+      
       if (existingReview) {
-        await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/${existingReview.id}/`, { rating, text: '' }, config);
+        // Update existing review - optimistic update
+        const response = await axios.patch(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/${existingReview.id}/`, { rating, text: '' }, config);
+        const updatedReview = { ...existingReview, rating };
+        setUserReviews(prevReviews => 
+          prevReviews.map(r => r.id === existingReview.id ? updatedReview : r)
+        );
       } else {
-        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`, { book_id: bookId, rating, text: '' }, config);
+        // Create new review - optimistic update
+        const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/`, { book_id: bookId, rating, text: '' }, config);
+        const newReview = {
+          ...response.data,
+          book_id: parseInt(bookId), // Ensure book_id is set
+          user: user.username,
+          rating: rating,
+          text: '',
+          created_at: new Date().toISOString()
+        };
+        setUserReviews(prevReviews => [...prevReviews, newReview]);
       }
+      
+      // Update books to refresh average ratings
       const booksResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/books/`);
       setBooks(booksResponse.data);
-      const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=me`, config);
-      setUserReviews(reviewsResponse.data);
+      
     } catch (error) {
       console.error('Error adding quick review:', error);
+      // Re-fetch user reviews on error to ensure consistency
+      try {
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const reviewsResponse = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/reviews/?user=me`, config);
+        setUserReviews(reviewsResponse.data);
+      } catch (fetchError) {
+        console.error('Error re-fetching reviews:', fetchError);
+      }
     }
   };
 

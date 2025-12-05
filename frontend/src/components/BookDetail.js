@@ -99,9 +99,7 @@ const BookDetail = () => {
     } catch (error) {
       console.error('Error updating reviews', error);
     }
-  };
-
-  const handleLikeReview = async (reviewId, isLiked) => {
+  };  const handleLikeReview = async (reviewId, isLiked) => {
     try {
       const config = {
         headers: {
