@@ -234,6 +234,52 @@ body {
   background-position: center;
 }
 
+.mobile-popup {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 90vw !important;
+  max-width: 320px !important;
+  height: auto !important;
+  min-height: 400px !important;
+  z-index: 10001 !important;
+}
+
+.mobile-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 10001;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.mobile-close-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Mobile popup backdrop */
+.mobile-popup-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+}
+
 
 
 .popup-header {
@@ -496,11 +542,16 @@ body {
   }
 
   .book-popup {
-    width: 280px;
-    left: 0;
-    right: 0;
-    transform: none;
-    margin: 8px auto 0;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 320px;
+    height: auto;
+    min-height: 400px;
+    z-index: 10000;
+    margin: 0;
   }
 
   .read-icon {
@@ -512,6 +563,23 @@ body {
   .pagination-nav {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .sorting-selects {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .smenu-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .smenu-label {
+    margin-right: 0;
+    font-size: 0.9rem;
   }
 }
 
@@ -600,6 +668,10 @@ body {
 }
 
 .smenu:hover .smenu-menu {
+  display: block;
+}
+
+.smenu input[type="checkbox"]:checked + label + .smenu-menu {
   display: block;
 }
 
