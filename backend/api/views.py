@@ -206,8 +206,8 @@ def user_activity(request):
     # Get recent activities: likes on user's reviews, user's new reviews, etc.
     activities = []
 
-    # Recent likes on user's reviews
-    recent_likes = ReviewLike.objects.filter(review__user=user).order_by('-created_at')[:10]
+    # Recent likes on user's reviews - prefetch related objects to avoid N+1 queries
+    recent_likes = ReviewLike.objects.filter(review__user=user).select_related('user', 'review__book').order_by('-created_at')[:10]
     for like in recent_likes:
         activities.append({
             'id': f'like_{like.id}',
@@ -215,8 +215,8 @@ def user_activity(request):
             'created_at': like.created_at,
         })
 
-    # Recent reviews by user
-    recent_reviews = Review.objects.filter(user=user).order_by('-created_at')[:5]
+    # Recent reviews by user - prefetch book to avoid N+1 queries
+    recent_reviews = Review.objects.filter(user=user).select_related('book').order_by('-created_at')[:5]
     for review in recent_reviews:
         activities.append({
             'id': f'review_{review.id}',
